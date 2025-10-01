@@ -28,9 +28,9 @@ if ( 'on' === AUBREYPWD_PERF_IMPROVEMENTS_GET_BOARD_NAME_PINS ) {
 	 * @param mixed $url The URL we are making the request to.
 	 *
 	 * @return mixed We will make the request ourselves and cache the response properly,
-	 *               we will return [] and skip any repeat requests, or we will return
+	 *               we will return `\WP_Error` and skip any repeat requests, or we will return
 	 *               `$default` when the request isn't our pinterest request, or we will
-	 *               return a response.
+	 *               return a response if we think the request is legit.
 	 */
 	function get_board_name_pins( $default, $params, $url ) {
 
@@ -41,7 +41,7 @@ if ( 'on' === AUBREYPWD_PERF_IMPROVEMENTS_GET_BOARD_NAME_PINS ) {
 		$skip_transient_key = 'aubreypwd_penci_pinterest_skip_request';
 
 		if ( 'skip' === get_transient( $skip_transient_key ) ) {
-			return []; // Skip request until our time expires.
+			return new \WP_Error(); // Skip request until our time expires.
 		}
 
 		if ( true === isset( $params['_get_board_name_pins'] ) ) {
@@ -76,8 +76,8 @@ if ( 'on' === AUBREYPWD_PERF_IMPROVEMENTS_GET_BOARD_NAME_PINS ) {
 			// Skip the next attempt for X seconds, nothing was found (don't repeat request).
 			set_transient( $skip_transient_key, 'skip', DAY_IN_SECONDS );
 
-			// Nothing was found, send that back.
-			return [];
+			// Nothing was found, skip this time and sub-sequent requests for X seconds...
+			return new \WP_Error();
 		}
 
 		// Something was found pass back the request for pinterest_widget.php to cache the data.
