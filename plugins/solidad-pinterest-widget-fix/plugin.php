@@ -1,17 +1,20 @@
 <?php
 /**
- * Plugin Name:       Solidad Pinterest Widget Performance Fix
+ * Plugin Name:       Soledad Pinterest Widget Performance Fix
  * Plugin URI:        https://aubreypwd.com
- * Description:       This fixes the Solidad theme's Pinterest widget from making HTTP requests to pinterest.com on every pageload.
+ * Description:       This fixes the Soledad theme's Pinterest widget from making HTTP requests to pinterest.com on every pageload.
  * Version:           1.0.0
  * Author:            Aubrey Portwood
  * Author URI:        https://aubreypwd.com
  * Copyright:         (c) Aubrey Portwood 2025
  */
 
-namespace aubreypwd\wp_extend\plugins\solidad_pinterest_widget_fix;
+namespace aubreypwd\wp_extend\plugins\soledad_pinterest_widget_fix;
 
-if ( file_exists( sprintf( '%s/themes/soledad/inc/widgets/pinterest_widget.php', WP_CONTENT_DIR ) ) ) {
+if (
+	file_exists( sprintf( '%s/themes/soledad/inc/widgets/pinterest_widget.php', WP_CONTENT_DIR ) )
+		&& 'soledad' === wp_get_theme()->get( 'Name' )
+) {
 
 	/**
 	 * Disable repeat wp_remote_get requests for Penci_Pinterest::get_board_name_pins().
