@@ -9,10 +9,12 @@
  * Copyright:         (c) Aubrey Portwood 2025
  */
 
-namespace aubreypwd\literaryquicksand_com;
+namespace aubreypwd\perf_improvements;
 
-// Define this in wp-config.php to disable this feature.
-if ( ! defined( 'AUBREYPWD_DISABLE_GET_BOARD_NAME_PINS' ) ) {
+// Set these to `off` to disable individual features.
+define( 'AUBREYPWD_PERF_IMPROVEMENTS_GET_BOARD_NAME_PINS', defined( 'AUBREYPWD_PERF_IMPROVEMENTS_GET_BOARD_NAME_PINS' ) ? AUBREYPWD_PERF_IMPROVEMENTS_GET_BOARD_NAME_PINS : 'on' );
+
+if ( 'on' === AUBREYPWD_PERF_IMPROVEMENTS_GET_BOARD_NAME_PINS ) {
 
 	/**
 	 * Disable repeat wp_remote_get requests for get_board_name_pins().
@@ -81,5 +83,5 @@ if ( ! defined( 'AUBREYPWD_DISABLE_GET_BOARD_NAME_PINS' ) ) {
 		// Something was found pass back the request for pinterest_widget.php to cache the data.
 		return $response;
 	}
-	add_filter( 'pre_http_request', '\aubreypwd\literaryquicksand_com\get_board_name_pins', 10, 3 );
+	add_filter( 'pre_http_request', sprintf( '\%s\get_board_name_pins', __NAMESPACE__ ), 10, 3 );
 }
