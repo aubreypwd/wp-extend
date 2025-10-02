@@ -3,7 +3,7 @@
  * Plugin Name:       Imagekit on-the-fly
  * Plugin URI:        https://aubreypwd.com
  * Description:       This switches out all images on the frontend with their Imagekit CDN counterparts.
- * Version:           1.0.0
+ * Version:           1.0.0-alpha
  * Author:            Aubrey Portwood
  * Author URI:        https://aubreypwd.com
  * Copyright:         (c) Aubrey Portwood, 2025
