@@ -21,13 +21,18 @@ if ( ! defined( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_PRIORITY' ) ) {
  * @return string
  */
 function get_cache_dir() {
-
 	return sprintf(
 		'%s/%s',
 		untrailingslashit( wp_get_upload_dir()['basedir'] ),
 		'aubreypwd/simple-caching-engine/cache'
 	);
 }
+
+// Delete the cache when the plugin is deactivated.
+register_deactivation_hook( __FILE__, function() {
+	global $wp_filesystem;
+		$wp_filesystem->delete( get_cache_dir(), true, 'd' );
+} );
 
 /**
  * Get the path to the cache file for a post.
