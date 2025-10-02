@@ -12,11 +12,7 @@ Cached posts are normally stored in `wp-content/uploads/aubreypwd/simple-cache-e
 
 ## How can by bypass the cache for a URL?
 
-Just add `?bypass_cache` to any URL.
-
-## How can I manually regenerate the cache for a post?
-
-Save the post in the admin, or add `?refresh_cache` to any posts' URL to regenerate the cache for it.
+Just add any GET query parameter to the URL, caching is bypassed when `POST` or `GET` parameters are passed to the page.
 
 ## How do I exclude posts from the cache?
 

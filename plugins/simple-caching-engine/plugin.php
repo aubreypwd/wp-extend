@@ -11,161 +11,175 @@
 
 namespace aubreypwd\wp_extend\plugins\simple_caching_engine;
 
-if ( ! defined( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_PRIORITY' ) ) {
-	define( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_PRIORITY', PHP_INT_MAX );
-}
+// Load with other plugins...
+add_action( 'plugins_loaded', function() {
 
-if ( ! defined( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_DISABLED' ) ) {
-	define( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_DISABLED', false );
-}
+	if ( ! defined( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_PRIORITY' ) ) {
+		define( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_PRIORITY', PHP_INT_MAX );
+	}
 
-if (
+	if ( ! defined( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_DISABLED' ) ) {
+		define( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_DISABLED', false );
+	}
+
+	if (
+		/**
+		 * Disable caching with a filter.
+		 *
+		 * @param $disable Set to true to disable.
+		 */
+		apply_filters( 'aubreypwd/simple_caching_engine/disable_cache', AUBREYPWD_SIMPLE_CACHING_ENGINE_DISABLED )
+	) {
+		return; // The filter told us to not.
+	}
 
 	/**
-	 * Disable with a filter.
+	 * Get the caching directory path.
 	 *
-	 * @param $disable Set to true to disable.
+	 * @return string
 	 */
-	apply_filters( 'aubreypwd/simple_caching_engine/disable_cache', AUBREYPWD_SIMPLE_CACHING_ENGINE_DISABLED )
-) {
-	return; // The filter told us to not.
-}
+	function get_cache_dir() {
+		return sprintf(
+			'%s/%s',
+			untrailingslashit( wp_get_upload_dir()['basedir'] ),
+			'aubreypwd/simple-caching-engine/cache'
+		);
+	}
 
-/**
- * Get the caching directory path.
- *
- * @return string
- */
-function get_cache_dir() {
-	return sprintf(
-		'%s/%s',
-		untrailingslashit( wp_get_upload_dir()['basedir'] ),
-		'aubreypwd/simple-caching-engine/cache'
-	);
-}
+	/**
+	 * Delete the entire cache.
+	 */
+	function delete_cache() {
+		global $wp_filesystem;
+			$wp_filesystem->delete( get_cache_dir(), true, 'd' );
+	}
 
-/**
- * Delete the entire cache.
- */
-function delete_cache() {
-	global $wp_filesystem;
-		$wp_filesystem->delete( get_cache_dir(), true, 'd' );
-}
+	register_deactivation_hook( __FILE__, function() {
+		delete_cache(); // When we deactivate this plugin, delete the cache entirely.
+	} );
 
-register_deactivation_hook( __FILE__, function() {
-	delete_cache(); // When we deactivate this plugin, delete the cache.
-} );
+	/**
+	 * Get the path to the cache file for a post.
+	 *
+	 * @param int $post_id The Post ID.
+	 * @return string
+	 */
+	function get_post_cache_file( $post_id ) {
+		return sprintf(
+			'%s/post-id-%d.html',
+			get_cache_dir(),
+			absint( $post_id )
+		);
+	}
 
-/**
- * Get the path to the cache file for a post.
- *
- * @param int $post_id The Post ID.
- * @return string
- */
-function get_post_cache_file( $post_id ) {
-	return sprintf(
-		'%s/post-id-%d.html',
-		get_cache_dir(),
-		absint( $post_id )
-	);
-}
+	// When we save a post...
+	add_action( 'save_post', function( $post_id ) {
 
-// When we save a post...
-add_action( 'save_post', function( $post_id ) {
-	@unlink( get_post_cache_file( $post_id ) ); // Delete the posts' cached file if there is one.
-} );
+		$cache_file = get_post_cache_file( $post_id );
 
-if ( is_admin() ) {
-	return; // No need to do anything else from the admin.
-}
-
-if ( wp_doing_ajax() || wp_doing_cron() ) {
-	return; // Also no need to do anything in these cases.
-}
-
-if ( isset( $_GET['bypass_cache'] ) ) {
-	return; // Use ?bypass_cache to bypass caching.
-}
-
-// When we load the frontend...
-add_action(
-	'template_redirect',
-	function() {
-
-		if ( is_user_logged_in() ) {
-			return; // No caching for logged in users.
-		}
-
-		global $post;
-
-		if ( ! is_a( $post, '\WP_Post' ) ) {
-			return; // Not a post, do not use cache.
-		}
-
-		if ( in_array(
-			$post->ID,
-			array_map(
-				function( int $post_id ) {
-					return absint( $post_id );
-				},
-
-				/**
-				 * Exclude posts from cache.
-				 *
-				 * @param array $exclude_posts A list of ID's of posts to exclude.
-				 */
-				apply_filters( 'aubreypwd\simple_caching_engine\exclude_posts', [] )
-			),
-			true
-		) ) {
-			return; // Don't cache this post.
-		}
-
-		@wp_mkdir_p( get_cache_dir() ); // Create the cache directory.
-
-		$cache_file = get_post_cache_file( $post->ID );
-
-		// Check for cached contents for the post...
-		$contents = ( file_exists( $cache_file ) )
-			? file_get_contents( $cache_file ) // Use the contents of the file.
-			: ''; // No cache.
-
-		if ( ! empty( $contents ) && ! isset( $_GET['refresh_cache'] ) ) {
-
-			// Use cached contents for the post instead of letting WordPress build it dynamically.
-			echo $contents;
-			exit;
-		}
-
-		// Since there isn't a valid cache (or you are refreshing it), create one by caching what WordPress does.
-		ob_start( function( $buffer ) use ( $cache_file, $post ) {
-
-				// Store the result on-disk.
-				@file_put_contents( $cache_file, $buffer );
-
-				/**
-				 * Right after we write the cache for a file.
-				 *
-				 * @param string   $cache_file The file that stores the on-disk cache for the post.
-				 * @param \WP_Post $post       The post object.
-				 * @param string   $buffer     The HTML we wrote to the cache.
-				 */
-				do_action( 'aubreypwd/simple_caching_engine/cache_generated', $cache_file, $post, $buffer );
-
-				// Output the page as WordPress sees it.
-				return $buffer;
-		} );
-	},
-	intval(
+		@unlink( $cache_file ); // Delete the posts' on-disk cache file, if there is one.
 
 		/**
-		 * Priority for serving cached content.
+		 * Fires after we delete a posts' on-disk cache file.
 		 *
-		 * Based on other plugins, adjust this to ensure that cached content is
-		 * both served and generated at the right time.
-		 *
-		 * @param int $priority Priority.
+		 * @param string $cache_file The file we deleted.
+		 * @param int    $post_id    The post associated with the cache.
 		 */
-		apply_filters( 'aubreypwd/simple_caching_engine/priority', AUBREYPWD_SIMPLE_CACHING_ENGINE_PRIORITY )
-	)
-);
+		do_action( 'aubreypwd/simple_caching_engine/delete_cache', $cache_file, $post_id );
+	} );
+
+	if ( is_admin() ) {
+		return; // No need to do anything else from the admin.
+	}
+
+	if ( wp_doing_ajax() || wp_doing_cron() ) {
+		return; // Also no need to do anything in these cases.
+	}
+
+	// When we load the frontend...
+	add_action(
+		'template_redirect',
+		function() {
+
+			if ( is_user_logged_in() ) {
+				return; // No caching for logged in users.
+			}
+
+			if ( ! empty( $_POST ) || ! empty( $_GET ) ) {
+				return; // Don't use cached contents when POST or GET have content (forms/etc).
+			}
+
+			global $post;
+
+			if ( ! is_a( $post, '\WP_Post' ) ) {
+				return; // Not a post, do not use cache.
+			}
+
+			if ( in_array(
+				$post->ID,
+				array_map(
+					function( int $post_id ) {
+						return absint( $post_id );
+					},
+
+					/**
+					 * Exclude posts from cache.
+					 *
+					 * @param array $exclude_posts A list of ID's of posts to exclude.
+					 */
+					apply_filters( 'aubreypwd\simple_caching_engine\exclude_posts', [] )
+				),
+				true
+			) ) {
+				return; // Don't cache this post.
+			}
+
+			@wp_mkdir_p( get_cache_dir() ); // Create the cache directory.
+
+			$cache_file = get_post_cache_file( $post->ID );
+
+			// Check for cached contents for the post...
+			$contents = ( file_exists( $cache_file ) )
+				? file_get_contents( $cache_file ) // Use the contents of the file.
+				: ''; // No cache.
+
+			if ( ! empty( $contents ) ) {
+
+				// Use cached contents for the post instead of letting WordPress build it dynamically.
+				echo $contents;
+				exit;
+			}
+
+			// Since there isn't a valid cache (or you are refreshing it), create one by caching what WordPress does.
+			ob_start( function( $buffer ) use ( $cache_file, $post ) {
+
+					// Store the result on-disk.
+					@file_put_contents( $cache_file, $buffer );
+
+					/**
+					 * Right after we write the cache for a file.
+					 *
+					 * @param string   $cache_file The file that stores the on-disk cache for the post.
+					 * @param \WP_Post $post       The post object.
+					 * @param string   $buffer     The HTML we wrote to the cache.
+					 */
+					do_action( 'aubreypwd/simple_caching_engine/cache_generated', $cache_file, $post, $buffer );
+
+					// Output the page as WordPress sees it.
+					return $buffer;
+			} );
+		},
+		intval(
+
+			/**
+			 * Priority for serving cached content.
+			 *
+			 * Based on other plugins, adjust this to ensure that cached content is
+			 * both served and generated at the right time.
+			 *
+			 * @param int $priority Priority.
+			 */
+			apply_filters( 'aubreypwd/simple_caching_engine/priority', AUBREYPWD_SIMPLE_CACHING_ENGINE_PRIORITY )
+		)
+	);
+} );
