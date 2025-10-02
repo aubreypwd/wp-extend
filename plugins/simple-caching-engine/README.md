@@ -29,3 +29,7 @@ add_filter( 'aubreypwd\simple_caching_engine\exclude_posts', function( $excluded
 ```
 
 This will exclude posts `12` and `13` from using the caching engine.
+
+## How can I adjust the priority for the cache.
+
+Cached items are both generated and served on the `template_redirect` hook. By default, it serves the cache at `PHP_INT_MAX` to ensure that the cache is served before anything else, but the number might need to be adjusted depending on the circumstance. The filter is here as a convinience.
