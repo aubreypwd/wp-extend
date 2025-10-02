@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Simple Caching Engine
  * Plugin URI:        https://aubreypwd.com
- * Description:       This creates a file-based cache of every post to increase server-side performance.
+ * Description:       This creates a on-disk cache of every post to increase server-side performance.
  * Version:           1.0.0
  * Author:            Aubrey Portwood
  * Author URI:        https://aubreypwd.com
@@ -61,6 +61,25 @@ add_action( 'template_redirect', function() {
 		return; // Not a post, do not use cache.
 	}
 
+	if ( in_array(
+		$post->ID,
+		array_map(
+			function( int $post_id ) {
+				return absint( $post_id );
+			},
+
+			/**
+			 * Exclude posts from cache.
+			 *
+			 * @param array $exclude_posts A list of ID's of posts to exclude.
+			 */
+			apply_filters( 'aubreypwd\simple_caching_engine\exclude_posts', [] )
+		),
+		true
+	) ) {
+		return; // Don't cache this post.
+	}
+
 	@wp_mkdir_p( get_cache_dir() ); // Create the cache directory.
 
 	$cache_file = get_post_cache_file( $post->ID );
@@ -80,10 +99,8 @@ add_action( 'template_redirect', function() {
 	// Since there isn't a valid cache (or you are refreshing it), create one by caching what WordPress does.
 	ob_start( function( $buffer ) use ( $cache_file ) {
 
-			@file_put_contents(
-				$cache_file,
-				$buffer
-			);
+			// Store the result on-disk.
+			@file_put_contents( $cache_file, $buffer );
 
 			// Output the page as WordPress sees it.
 			return $buffer;
