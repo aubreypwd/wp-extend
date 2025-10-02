@@ -1,6 +1,6 @@
 # Simple Caching Engine
 
-This plugin works simply by storeing the result of a WordPress post in a `.html` file on-disk. Until the post is modified, e.g. `save_post`, the cache on-disk.
+This plugin works simply by storeing the result of a WordPress post in a `.html` file on-disk. Until the post is modified or the cache is older than one day (the default), the cache on-disk is used.
 
 This reduces what WordPress is doing dynamically on each page load, helping out TTFB, server load, and responsiveness from the server.
 
@@ -53,3 +53,17 @@ Use the hook `aubreypwd/simple_caching_engine/disable_cache`:
 ```php
 add_filter( 'aubreypwd/simple_caching_engine/disable_cache', '__return_true' );
 ```
+
+## How do I extend the lifetime of the on-disk cache file?
+
+Use the filter `aubreypwd/simple_caching_engine/cache_lifetime` to change the accepted lifetime of the on-disk `*.html` cache files:
+
+```php
+add_filter( 'aubreypwd/simple_caching_engine/cache_lifetime', function( $lifetime ) {
+	return HOUR_IN_SECONDS;
+} );
+```
+
+This will change the trusted lifetime of a cached `.html` version of a post from 1 day to an hour. If the lifetime is not trusted, the on-disk cache of the post will be re-generated.
+
+You can also `define` the constant `AUBREYPWD_SIMPLE_CACHING_ENGINE_CACHE_FILE_LIFETIME` to set the lifetime as well.

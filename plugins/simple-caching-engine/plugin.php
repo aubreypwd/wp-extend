@@ -11,6 +11,10 @@
 
 namespace aubreypwd\wp_extend\plugins\simple_caching_engine;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	die( 'Mess with the best, die like the rest.' );
+}
+
 // Load with other plugins...
 add_action( 'plugins_loaded', function() {
 
@@ -20,6 +24,10 @@ add_action( 'plugins_loaded', function() {
 
 	if ( ! defined( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_DISABLED' ) ) {
 		define( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_DISABLED', false );
+	}
+
+	if ( ! defined( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_CACHE_FILE_LIFETIME' ) ) {
+		define( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_CACHE_FILE_LIFETIME', DAY_IN_SECONDS );
 	}
 
 	if (
@@ -139,18 +147,40 @@ add_action( 'plugins_loaded', function() {
 			$cache_file = get_post_cache_file( $post->ID );
 
 			// Check for cached contents for the post...
-			$contents = ( file_exists( $cache_file ) )
-				? file_get_contents( $cache_file ) // Use the contents of the file.
-				: ''; // No cache.
+			$cache = (
 
-			if ( ! empty( $contents ) ) {
+				// We have a on-disk cache...
+				file_exists( $cache_file )
 
-				// Use cached contents for the post instead of letting WordPress build it dynamically.
-				echo $contents;
-				exit;
+				// The cache (file) is not older than X days...
+				&& (
+
+					// The lifetime of the file on-disk...
+					( time() - filemtime( $cache_file ) )
+
+					// Is less than the acceptable lifetime...
+					< (
+
+						/**
+						 * Set the acceptable lifetime of on-disk cache files.
+						 *
+						 * @param $seconds Lifetime in seconds.
+						 */
+						apply_filters(
+							'aubreypwd/simple_caching_engine/cache_lifetime',
+							AUBREYPWD_SIMPLE_CACHING_ENGINE_CACHE_FILE_LIFETIME
+						)
+					)
+				)
+			)
+				? file_get_contents( $cache_file ) // Use the on-disk cache of the post.
+				: false; // Don't use the on-disk cache (or there is none).
+
+			if ( false !== $cache && is_string( $cache ) && ! empty( $cache ) ) {
+				exit( $cache ); // Output our cache instead of letting WordPress generate the markup.
 			}
 
-			// Since there isn't a valid cache (or you are refreshing it), create one by caching what WordPress does.
+			// Since there isn't a valid cache, (re-)create one by caching what WordPress does.
 			ob_start( function( $buffer ) use ( $cache_file, $post ) {
 
 					// Store the result on-disk.
@@ -165,7 +195,7 @@ add_action( 'plugins_loaded', function() {
 					 */
 					do_action( 'aubreypwd/simple_caching_engine/cache_generated', $cache_file, $post, $buffer );
 
-					// Output the page as WordPress sees it.
+					// Output the page as WordPress did it.
 					return $buffer;
 			} );
 		},
