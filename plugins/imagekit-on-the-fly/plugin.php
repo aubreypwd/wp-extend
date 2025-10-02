@@ -46,39 +46,75 @@ if (
 function convert_content( string $content ) {
 
 	// Get the current uploads URI (including domain) so we can use it to switch out images/videos in the content...
-	$uploads_uri = trim( untrailingslashit( str_replace( [ 'http://', 'https://' ], '', wp_get_upload_dir()['baseurl'] ) ), '/' );
+	$uploads_uri = trim( str_replace( [ 'http://', 'https://' ], '', wp_get_upload_dir()['baseurl'] , '/' ) );
 
 	// Image replacement: add transformations defined above.
 	$content = preg_replace(
-		sprintf(
-			'#https?://%s/([^\s"\']+?\.(jpe?g|png|bmp|webp))#i',
-			$uploads_uri
-		),
-		sprintf(
-			'https://ik.imagekit.io/%s/tr:%s/%s/$1',
-			AUBREYPWD_IMAGKIT_ON_THE_FLY_USERNAME,
 
-			/**
-			 * Filter transformations.
-			 *
-			 * @param string $transformations See https://imagekit.io/docs/image-transformation.
-			 */
-			apply_filters( 'aubreypwd/imagekit_on_the_fly/tr', AUBREYPWD_IMAGKIT_ON_THE_FLY_IMAGE_TR ),
-			trim( AUBREYPWD_IMAGKIT_ON_THE_FLY_URI, '/' )
+		/**
+		 * Filter preg_replace pattern (images).
+		 *
+		 * @param string $pattern The pattern.
+		 */
+		apply_filters(
+			'aubreypwd/imagekit_on_the_fly/preg_replace/images/pattern',
+			sprintf(
+				'#https?://%s/([^\s"\']+?\.(jpe?g|png|bmp|webp))#i',
+				$uploads_uri
+			)
+		),
+
+		/**
+		 * Filter preg_replace replacement pattern (images).
+		 *
+		 * @param string $replacement_pattern The replacement pattern.
+		 */
+		apply_filters(
+			'aubreypwd/imagekit_on_the_fly/preg_replace/images/replacement_pattern',
+			sprintf(
+				'https://ik.imagekit.io/%s/tr:%s/%s/$1',
+				AUBREYPWD_IMAGKIT_ON_THE_FLY_USERNAME,
+
+				/**
+				 * Filter transformations.
+				 *
+				 * @param string $transformations See https://imagekit.io/docs/image-transformation.
+				 */
+				apply_filters( 'aubreypwd/imagekit_on_the_fly/tr', AUBREYPWD_IMAGKIT_ON_THE_FLY_IMAGE_TR ),
+				trim( AUBREYPWD_IMAGKIT_ON_THE_FLY_URI, '/' )
+			)
 		),
 		$content
 	);
 
 	// Video replacement, no transformations, but hosted on imagekit.
 	$content = preg_replace(
-		sprintf(
-			'#https?://%s/([^\s"\']+?\.(mp4|webm|mov))#i',
-			$uploads_uri
+
+		/**
+		 * Filter preg_replace pattern (video).
+		 *
+		 * @param string $pattern The pattern.
+		 */
+		apply_filters(
+			'aubreypwd/imagekit_on_the_fly/preg_replace/video/pattern',
+			sprintf(
+				'#https?://%s/([^\s"\']+?\.(mp4|webm|mov))#i',
+				$uploads_uri
+			)
 		),
-		sprintf(
-			'https://ik.imagekit.io/%s/%s/$1',
-			AUBREYPWD_IMAGKIT_ON_THE_FLY_USERNAME,
-			trim( AUBREYPWD_IMAGKIT_ON_THE_FLY_URI, '/' )
+
+		/**
+		 * Filter preg_replace replacement pattern (video).
+		 *
+		 * @param string $replacement_pattern The replacement pattern.
+		 */
+		apply_filters(
+			'aubreypwd/imagekit_on_the_fly/preg_replace/video/replacement_pattern',
+			sprintf(
+				'https://ik.imagekit.io/%s/%s/$1',
+				AUBREYPWD_IMAGKIT_ON_THE_FLY_USERNAME,
+				trim( AUBREYPWD_IMAGKIT_ON_THE_FLY_URI, '/' )
+			)
 		),
 		$content
 	);
@@ -112,10 +148,19 @@ add_filter( 'the_content', function( $content ) {
 
 		// Check the pixel on the server, it should translate to a 200 OK if imagekit is up.
 		$headers = @get_headers(
-			sprintf(
-				'https://ik.imagekit.io/%s/%s',
-				AUBREYPWD_IMAGKIT_ON_THE_FLY_USERNAME,
-				trim( AUBREYPWD_IMAGKIT_ON_THE_FLY_PIXEL_URI, '/' )
+
+			/**
+			 * Filter imagekit pixel URI.
+			 *
+			 * @param string $uri The URI where your pixel should be on imagekit.
+			 */
+			apply_filters(
+				'aubreypwd/imagekit_on_the_fly/pixel_uri',
+				sprintf(
+					'https://ik.imagekit.io/%s/%s',
+					AUBREYPWD_IMAGKIT_ON_THE_FLY_USERNAME,
+					trim( AUBREYPWD_IMAGKIT_ON_THE_FLY_PIXEL_URI, '/' )
+				)
 			)
 		);
 
