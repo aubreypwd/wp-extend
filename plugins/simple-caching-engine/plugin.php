@@ -1,0 +1,91 @@
+<?php
+/**
+ * Plugin Name:       Simple Caching Engine
+ * Plugin URI:        https://aubreypwd.com
+ * Description:       This creates a file-based cache of every post to increase server-side performance.
+ * Version:           1.0.0
+ * Author:            Aubrey Portwood
+ * Author URI:        https://aubreypwd.com
+ * Copyright:         (c) Aubrey Portwood, 2025
+ */
+
+namespace aubreypwd\wp_extend\plugins\simple_caching_engine;
+
+/**
+ * Get the caching directory path.
+ *
+ * @return string
+ */
+function get_cache_dir() {
+
+	return sprintf(
+		'%s/%s',
+		untrailingslashit( wp_get_upload_dir()['basedir'] ),
+		'aubreypwd/simple-caching-engine/cache'
+	);
+}
+
+/**
+ * Get the path to the cache file for a post.
+ *
+ * @param int $post_id The Post ID.
+ * @return string
+ */
+function get_post_cache_file( $post_id ) {
+	return sprintf( '%s/post-id-%d.html', get_cache_dir(), absint( $post_id ) );
+}
+
+// When we save a post...
+add_action( 'save_post', function( $post_id ) {
+	@unlink( get_post_cache_file( $post_id ) ); // Delete the posts' cached file if there is one.
+} );
+
+if ( is_admin() ) {
+	return; // No need to do anything else from the admin.
+}
+
+if ( wp_doing_ajax() || wp_doing_cron() ) {
+	return; // Also no need to do anything in these cases.
+}
+
+if ( isset( $_GET['bypass_cache'] ) ) {
+	return; // Use ?bypass_cache to bypass caching.
+}
+
+// When we load the frontend...
+add_action( 'template_redirect', function() {
+
+	global $post;
+
+	if ( ! is_a( $post, '\WP_Post' ) ) {
+		return; // Not a post, do not use cache.
+	}
+
+	@wp_mkdir_p( get_cache_dir() ); // Create the cache directory.
+
+	$cache_file = get_post_cache_file( $post->ID );
+
+	// Check for cached contents for the post...
+	$contents = ( file_exists( $cache_file ) )
+		? file_get_contents( $cache_file ) // Use the contents of the file.
+		: ''; // No cache.
+
+	if ( ! empty( $contents ) && ! isset( $_GET['refresh_cache'] ) ) {
+
+		// Use cached contents for the post instead of letting WordPress build it dynamically.
+		echo $contents;
+		exit;
+	}
+
+	// Since there isn't a valid cache (or you are refreshing it), create one by caching what WordPress does.
+	ob_start( function( $buffer ) use ( $cache_file ) {
+
+			@file_put_contents(
+				$cache_file,
+				$buffer
+			);
+
+			// Output the page as WordPress sees it.
+			return $buffer;
+	} );
+} );
