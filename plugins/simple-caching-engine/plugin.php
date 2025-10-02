@@ -15,6 +15,22 @@ if ( ! defined( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_PRIORITY' ) ) {
 	define( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_PRIORITY', PHP_INT_MAX );
 }
 
+if ( ! defined( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_DISABLED' ) ) {
+	define( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_DISABLED', false );
+}
+
+if (
+
+	/**
+	 * Disable with a filter.
+	 *
+	 * @param $disable Set to true to disable.
+	 */
+	apply_filters( 'aubreypwd/simple_caching_engine/disable_cache', AUBREYPWD_SIMPLE_CACHING_ENGINE_DISABLED )
+) {
+	return; // The filter told us to not.
+}
+
 /**
  * Get the caching directory path.
  *
@@ -28,6 +44,9 @@ function get_cache_dir() {
 	);
 }
 
+/**
+ * Delete the entire cache.
+ */
 function delete_cache() {
 	global $wp_filesystem;
 		$wp_filesystem->delete( get_cache_dir(), true, 'd' );
@@ -119,10 +138,19 @@ add_action(
 		}
 
 		// Since there isn't a valid cache (or you are refreshing it), create one by caching what WordPress does.
-		ob_start( function( $buffer ) use ( $cache_file ) {
+		ob_start( function( $buffer ) use ( $cache_file, $post ) {
 
 				// Store the result on-disk.
 				@file_put_contents( $cache_file, $buffer );
+
+				/**
+				 * Right after we write the cache for a file.
+				 *
+				 * @param string   $cache_file The file that stores the on-disk cache for the post.
+				 * @param \WP_Post $post       The post object.
+				 * @param string   $buffer     The HTML we wrote to the cache.
+				 */
+				do_action( 'aubreypwd/simple_caching_engine/cache_generated', $cache_file, $post, $buffer );
 
 				// Output the page as WordPress sees it.
 				return $buffer;

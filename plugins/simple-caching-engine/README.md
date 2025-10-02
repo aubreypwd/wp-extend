@@ -46,6 +46,14 @@ You can also `define` the constant `AUBREYPWD_SIMPLE_CACHING_ENGINE_PRIORITY` to
 define( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_PRIORITY', 10 );
 ```
 
-# How can I reset the entire cache for all posts?
+## How can I reset the entire cache for all posts?
 
 The easiest way to do this is to deactivate the plugin (which will delete all cached `.html` files), and then re-activate.
+
+## How can I disable caching dynamically?
+
+Use the hook `aubreypwd/simple_caching_engine/disable_cache`:
+
+```php
+add_filter( 'aubreypwd/simple_caching_engine/disable_cache', '__return_true' );
+```
