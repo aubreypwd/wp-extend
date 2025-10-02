@@ -28,10 +28,17 @@ function get_cache_dir() {
 	);
 }
 
-// Delete the cache when the plugin is deactivated.
-register_deactivation_hook( __FILE__, function() {
+function delete_cache() {
 	global $wp_filesystem;
 		$wp_filesystem->delete( get_cache_dir(), true, 'd' );
+}
+
+register_deactivation_hook( __FILE__, function() {
+	delete_cache(); // When we deactivate this plugin, delete the cache.
+} );
+
+add_action( 'upgrader_process_complete', function() {
+	delete_cache(); // Something was updated, delete the cache and start over.
 } );
 
 /**
@@ -41,7 +48,11 @@ register_deactivation_hook( __FILE__, function() {
  * @return string
  */
 function get_post_cache_file( $post_id ) {
-	return sprintf( '%s/post-id-%d.html', get_cache_dir(), absint( $post_id ) );
+	return sprintf(
+		'%s/post-id-%d.html',
+		get_cache_dir(),
+		absint( $post_id )
+	);
 }
 
 // When we save a post...
@@ -65,6 +76,10 @@ if ( isset( $_GET['bypass_cache'] ) ) {
 add_action(
 	'template_redirect',
 	function() {
+
+		if ( is_user_logged_in() ) {
+			return; // No caching for logged in users.
+		}
 
 		global $post;
 
