@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name:       Simple Caching Engine
+ * Plugin Name:       Simple Server-side Caching Engine
  * Plugin URI:        https://aubreypwd.com
  * Description:       This creates a on-disk cache of every post to increase server-side performance.
  * Version:           1.0.0
@@ -9,7 +9,7 @@
  * Copyright:         (c) Aubrey Portwood, 2025
  */
 
-namespace aubreypwd\wp_extend\plugins\simple_caching_engine;
+namespace aubreypwd\wp_extend\plugins\simple_server_side_caching_engine;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	die( 'Mess with the best, die like the rest.' );
@@ -18,16 +18,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Load with other plugins...
 add_action( 'plugins_loaded', function() {
 
-	if ( ! defined( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_PRIORITY' ) ) {
-		define( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_PRIORITY', PHP_INT_MAX );
+	if ( ! defined( 'AUBREYPWD_SIMPLE_SERVER_SIDE_CACHING_ENGINE_PRIORITY' ) ) {
+		define( 'AUBREYPWD_SIMPLE_SERVER_SIDE_CACHING_ENGINE_PRIORITY', PHP_INT_MAX );
 	}
 
-	if ( ! defined( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_DISABLED' ) ) {
-		define( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_DISABLED', false );
+	if ( ! defined( 'AUBREYPWD_SIMPLE_SERVER_SIDE_CACHING_ENGINE_DISABLED' ) ) {
+		define( 'AUBREYPWD_SIMPLE_SERVER_SIDE_CACHING_ENGINE_DISABLED', false );
 	}
 
-	if ( ! defined( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_CACHE_FILE_LIFETIME' ) ) {
-		define( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_CACHE_FILE_LIFETIME', DAY_IN_SECONDS );
+	if ( ! defined( 'AUBREYPWD_SIMPLE_SERVER_SIDE_CACHING_ENGINE_CACHE_FILE_LIFETIME' ) ) {
+		define( 'AUBREYPWD_SIMPLE_SERVER_SIDE_CACHING_ENGINE_CACHE_FILE_LIFETIME', DAY_IN_SECONDS );
 	}
 
 	if (
@@ -36,7 +36,7 @@ add_action( 'plugins_loaded', function() {
 		 *
 		 * @param $disable Set to true to disable.
 		 */
-		apply_filters( 'aubreypwd/simple_caching_engine/disable_cache', AUBREYPWD_SIMPLE_CACHING_ENGINE_DISABLED )
+		apply_filters( 'aubreypwd/simple_server_side_caching_engine/disable_cache', AUBREYPWD_SIMPLE_SERVER_SIDE_CACHING_ENGINE_DISABLED )
 	) {
 		return; // The filter told us to not.
 	}
@@ -48,9 +48,11 @@ add_action( 'plugins_loaded', function() {
 	 */
 	function get_cache_dir() {
 		return sprintf(
-			'%s/%s',
-			untrailingslashit( wp_get_upload_dir()['basedir'] ),
-			'aubreypwd/simple-caching-engine/cache'
+			'%s/cache/%s',
+			untrailingslashit( WP_CONTENT_DIR ),
+
+			// Yes, this has underscores so I can easily rename it later if I want to.
+			str_replace( '_', '-', 'aubreypwd/simple_server_side_caching_engine' )
 		);
 	}
 
@@ -93,7 +95,7 @@ add_action( 'plugins_loaded', function() {
 		 * @param string $cache_file The file we deleted.
 		 * @param int    $post_id    The post associated with the cache.
 		 */
-		do_action( 'aubreypwd/simple_caching_engine/delete_cache', $cache_file, $post_id );
+		do_action( 'aubreypwd/simple_server_side_caching_engine/delete_cache', $cache_file, $post_id );
 	} );
 
 	if ( is_admin() ) {
@@ -135,7 +137,7 @@ add_action( 'plugins_loaded', function() {
 					 *
 					 * @param array $exclude_posts A list of ID's of posts to exclude.
 					 */
-					apply_filters( 'aubreypwd\simple_caching_engine\exclude_posts', [] )
+					apply_filters( 'aubreypwd/simple_server_side_caching_engine/exclude_posts', [] )
 				),
 				true
 			) ) {
@@ -167,8 +169,8 @@ add_action( 'plugins_loaded', function() {
 						 * @param $seconds Lifetime in seconds.
 						 */
 						apply_filters(
-							'aubreypwd/simple_caching_engine/cache_lifetime',
-							AUBREYPWD_SIMPLE_CACHING_ENGINE_CACHE_FILE_LIFETIME
+							'aubreypwd/simple_server_side_caching_engine/cache_lifetime',
+							AUBREYPWD_SIMPLE_SERVER_SIDE_CACHING_ENGINE_CACHE_FILE_LIFETIME
 						)
 					)
 				)
@@ -193,7 +195,7 @@ add_action( 'plugins_loaded', function() {
 					 * @param \WP_Post $post       The post object.
 					 * @param string   $buffer     The HTML we wrote to the cache.
 					 */
-					do_action( 'aubreypwd/simple_caching_engine/cache_generated', $cache_file, $post, $buffer );
+					do_action( 'aubreypwd/simple_server_side_caching_engine/cache_generated', $cache_file, $post, $buffer );
 
 					// Output the page as WordPress did it.
 					return $buffer;
@@ -209,7 +211,7 @@ add_action( 'plugins_loaded', function() {
 			 *
 			 * @param int $priority Priority.
 			 */
-			apply_filters( 'aubreypwd/simple_caching_engine/priority', AUBREYPWD_SIMPLE_CACHING_ENGINE_PRIORITY )
+			apply_filters( 'aubreypwd/simple_server_side_caching_engine/priority', AUBREYPWD_SIMPLE_SERVER_SIDE_CACHING_ENGINE_PRIORITY )
 		)
 	);
 } );
