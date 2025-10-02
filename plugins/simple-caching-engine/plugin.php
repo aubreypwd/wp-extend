@@ -11,6 +11,10 @@
 
 namespace aubreypwd\wp_extend\plugins\simple_caching_engine;
 
+if ( ! defined( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_PRIORITY' ) ) {
+	define( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_PRIORITY', PHP_INT_MAX );
+}
+
 /**
  * Get the caching directory path.
  *
@@ -118,6 +122,6 @@ add_action(
 		 *
 		 * @param int $priority Priority.
 		 */
-		apply_filters( 'aubreypwd/simple_caching_engine/priority', PHP_INT_MAX )
+		apply_filters( 'aubreypwd/simple_caching_engine/priority', AUBREYPWD_SIMPLE_CACHING_ENGINE_PRIORITY )
 	)
 );
