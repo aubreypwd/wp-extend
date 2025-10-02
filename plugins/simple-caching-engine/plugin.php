@@ -37,10 +37,6 @@ register_deactivation_hook( __FILE__, function() {
 	delete_cache(); // When we deactivate this plugin, delete the cache.
 } );
 
-add_action( 'upgrader_process_complete', function() {
-	delete_cache(); // Something was updated, delete the cache and start over.
-} );
-
 /**
  * Get the path to the cache file for a post.
  *

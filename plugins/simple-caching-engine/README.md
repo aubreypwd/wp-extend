@@ -49,5 +49,3 @@ define( 'AUBREYPWD_SIMPLE_CACHING_ENGINE_PRIORITY', 10 );
 # How can I reset the entire cache for all posts?
 
 The easiest way to do this is to deactivate the plugin (which will delete all cached `.html` files), and then re-activate.
-
-Note: The cache will also be entirely reset when you update another plugin.
