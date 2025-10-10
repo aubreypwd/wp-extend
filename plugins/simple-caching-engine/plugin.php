@@ -61,9 +61,25 @@ add_action( 'plugins_loaded', function() {
 			$wp_filesystem->delete( get_cache_dir(), true, 'd' );
 	}
 
+	// Reset the cache when we deactivate the plugin.
 	register_deactivation_hook( __FILE__, function() {
-		delete_cache(); // When we deactivate this plugin, delete the cache entirely.
+		delete_cache();
 	} );
+
+	// Reset the cache anytime any options change.
+	foreach ( [
+		'update_option',
+		'add_option',
+		'delete_option',
+		'update_site_option',
+		'updated_site_option',
+		'add_site_option',
+		'delete_site_option',
+	] as $filter ) {
+		add_action( $filter, function() {
+			delete_cache()();
+		} );
+	}
 
 	/**
 	 * Get the path to the cache file for a post.
