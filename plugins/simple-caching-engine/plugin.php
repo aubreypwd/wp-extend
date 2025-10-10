@@ -19,7 +19,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 add_action( 'plugins_loaded', function() {
 
 	if ( ! defined( 'AUBREYPWD_SIMPLE_SERVER_SIDE_CACHING_ENGINE_PRIORITY' ) )
-			define( 'AUBREYPWD_SIMPLE_SERVER_SIDE_CACHING_ENGINE_PRIORITY', PHP_INT_MAX );
+
+		// Why - 1000, that way other plugins CAN beat us out if they want to e.g. - 900 - 800.
+		define( 'AUBREYPWD_SIMPLE_SERVER_SIDE_CACHING_ENGINE_PRIORITY', PHP_INT_MAX - 1000 );
 
 	if ( ! defined( 'AUBREYPWD_SIMPLE_SERVER_SIDE_CACHING_ENGINE_DISABLED' ) )
 			define( 'AUBREYPWD_SIMPLE_SERVER_SIDE_CACHING_ENGINE_DISABLED', false );
@@ -58,7 +60,12 @@ add_action( 'plugins_loaded', function() {
 	 */
 	function delete_cache() {
 		global $wp_filesystem;
-			$wp_filesystem->delete( get_cache_dir(), true, 'd' );
+
+		if ( ! $wp_filesystem ) {
+			return;
+		}
+
+		$wp_filesystem->delete( get_cache_dir(), true, 'd' );
 	}
 
 	// Reset the cache when we deactivate the plugin.
@@ -77,7 +84,7 @@ add_action( 'plugins_loaded', function() {
 		'delete_site_option',
 	] as $filter ) {
 		add_action( $filter, function() {
-			delete_cache()();
+			delete_cache();
 		} );
 	}
 
@@ -198,20 +205,20 @@ add_action( 'plugins_loaded', function() {
 			// Since there isn't a valid cache, (re-)create one by caching what WordPress does.
 			ob_start( function( $buffer ) use ( $cache_file, $post ) {
 
-					// Store the result on-disk.
-					@file_put_contents( $cache_file, $buffer );
+				// Store the result on-disk.
+				@file_put_contents( $cache_file, $buffer );
 
-					/**
-					 * Right after we write the cache for a file.
-					 *
-					 * @param string   $cache_file The file that stores the on-disk cache for the post.
-					 * @param \WP_Post $post       The post object.
-					 * @param string   $buffer     The HTML we wrote to the cache.
-					 */
-					do_action( 'aubreypwd/simple_server_side_caching_engine/cache_generated', $cache_file, $post, $buffer );
+				/**
+				 * Right after we write the cache for a file.
+				 *
+				 * @param string   $cache_file The file that stores the on-disk cache for the post.
+				 * @param \WP_Post $post       The post object.
+				 * @param string   $buffer     The HTML we wrote to the cache.
+				 */
+				do_action( 'aubreypwd/simple_server_side_caching_engine/cache_generated', $cache_file, $post, $buffer );
 
-					// Output the page as WordPress did it.
-					return $buffer;
+				// Output the page as WordPress did it.
+				return $buffer;
 			} );
 		},
 		intval(
