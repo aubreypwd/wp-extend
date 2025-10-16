@@ -26,7 +26,7 @@ if ( wp_doing_ajax() || wp_doing_cron() ) {
 }
 
 @define( 'AUBREYPWD_IMAGEKIT_ON_THE_FLY_USERNAME', '' );
-@define( 'AUBREYPWD_IMAGEKIT_ON_THE_FLY_IMAGE_TR', 'f-webp,q-71,md-false,cp-false' ); // See https://imagekit.io/docs/image-transformation.
+@define( 'AUBREYPWD_IMAGEKIT_ON_THE_FLY_IMAGE_TR', 'f-webp,q-61,md-false,cp-false' ); // See https://imagekit.io/docs/image-transformation.
 @define( 'AUBREYPWD_IMAGEKIT_ON_THE_FLY_UPTIME_IMAGE', plugins_url( 'uptime-pixel.gif', __FILE__ ) ); // Override if you want to use a pixel somewhere else.
 
 if (
