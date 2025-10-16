@@ -23,31 +23,36 @@ if ( wp_doing_ajax() || wp_doing_cron() ) {
 	return;
 }
 
-@define( 'AUBREYPWD_DEFER_SCRIPTS_NEEDLES', '' );
+@define( 'AUBREYPWD_DEFER_SCRIPTS_JS_NEEDLES', '' );
+@define( 'AUBREYPWD_DEFER_SCRIPTS_CSS_NEEDLES', '' );
 
-if ( empty( AUBREYPWD_DEFER_SCRIPTS_NEEDLES ) ) {
+if ( empty( AUBREYPWD_DEFER_SCRIPTS_JS_NEEDLES ) ) {
 	return;
 }
 
-function get_needles() {
-	return explode( ',', AUBREYPWD_DEFER_SCRIPTS_NEEDLES );
+function get_css_needles() {
+	return explode( ',', AUBREYPWD_DEFER_SCRIPTS_CSS_NEEDLES );
 }
 
-// Filter any script tags that we might want to defer...
+function get_js_needles() {
+	return explode( ',', AUBREYPWD_DEFER_SCRIPTS_JS_NEEDLES );
+}
+
+// Filter any JS tags we want to defer...
 add_filter( 'script_loader_tag', function( $tag, $handle, $src ) {
 
 	if ( stristr( $tag, 'defer' ) ) {
 		return $tag; // Already deferred.
 	}
 
-	foreach ( get_needles() as $needle ) {
+	if ( ! stristr( $tag, '.js' ) || ! stristr( $tag, '<script' ) ) {
+		return $tag; // Only .js files and script tags.
+	}
+
+	foreach ( get_js_needles() as $needle ) {
 
 		if ( ! stristr( $tag, $needle ) ) {
-			continue; // Tag does not have the needle in it, skip.
-		}
-
-		if ( ! stristr( $tag, '<script' ) ) {
-			continue; // Not JS, we only do JS.
+			continue; // Tag does not have the needle in it, skip this needle.
 		}
 
 		if (
@@ -67,7 +72,7 @@ add_filter( 'script_loader_tag', function( $tag, $handle, $src ) {
 				 *
 				 * @return bool
 				 */
-				apply_filters( 'aubreypwd/defer_scripts/defer', true, $tag, $handle, $src, $needle )
+				apply_filters( 'aubreypwd/defer_scripts/defer/js', true, $tag, $handle, $src, $needle )
 		) {
 			continue; // Skip if the filter says so.
 		}
@@ -79,3 +84,66 @@ add_filter( 'script_loader_tag', function( $tag, $handle, $src ) {
 	return $tag;
 
 }, 10, 3 );
+
+// Filter any CSS tags we want to defer...
+add_filter( 'style_loader_tag', function( $tag, $handle, $src, $media ) {
+
+	if (
+		stristr( $tag, 'onload' ) &&
+		stristr( $tag, 'this.media' ) &&
+		stristr( $tag, 'all' )
+	) {
+		return $tag; // Already deferred.
+	}
+
+	if ( ! stristr( $tag, '.css' ) || ! stristr( $tag, '<link' ) ) {
+		return $tag; // Only CSS via <link> tags...
+	}
+
+	if ( 'print' === $media ) {
+		return $tag; // Don't need to defer this, it would already be deferred.
+	}
+
+	foreach ( get_css_needles() as $needle ) {
+
+		if ( ! stristr( $tag, $needle ) ) {
+			continue; // Tag does not have the needle in it, skip.
+		}
+
+		if (
+			false ===
+
+				/**
+				 * Set to false to skip deferring this script.
+				 *
+				 * This is your chance to do custom logic to decide when
+				 * to and when not to defer this script e.g. to not
+				 * defer it on specific pages, etc.
+				 *
+				 * @param string $tag The tag being changed to defer.
+				 * @param string $handle The handle of the script.
+				 * @param string $src The src= value of the script.
+				 * @param string $needle The needle determining the script to be deferred.
+				 * @param string $media The media attribute for the style.
+				 *
+				 * @return bool
+				 */
+				apply_filters( 'aubreypwd/defer_scripts/defer/css', true, $tag, $handle, $src, $needle, $media )
+		) {
+			continue; // Skip if the filter says so.
+		}
+
+		// Convert the tag's media to print initially then let JS set it to defer it.
+		$tag = str_replace(
+			"media='{$media}'",
+			sprintf(
+				'media="print" onload="%s" data-deferred="true"',
+				sprintf( "this.media='%s'", $media )
+			),
+			$tag
+		);
+	}
+
+	return $tag;
+
+}, 10, 4 );
