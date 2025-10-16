@@ -59,10 +59,14 @@ add_action( 'plugins_loaded', function() {
 	 * Delete the entire cache.
 	 */
 	function delete_cache() {
+
 		global $wp_filesystem;
 
 		if ( ! $wp_filesystem ) {
-			return;
+
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+
+			WP_Filesystem();
 		}
 
 		$wp_filesystem->delete( get_cache_dir(), true, 'd' );
@@ -73,19 +77,22 @@ add_action( 'plugins_loaded', function() {
 		delete_cache();
 	} );
 
-	// Reset the cache anytime any options change.
-	foreach ( [
-		'update_option',
-		'add_option',
-		'delete_option',
-		'update_site_option',
-		'updated_site_option',
-		'add_site_option',
-		'delete_site_option',
-	] as $filter ) {
-		add_action( $filter, function() {
-			delete_cache();
-		} );
+	if ( is_admin() ) {
+
+		// Reset the cache anytime any options change in the admin.
+		foreach ( [
+			'update_option',
+			'add_option',
+			'delete_option',
+			'update_site_option',
+			'updated_site_option',
+			'add_site_option',
+			'delete_site_option',
+		] as $filter ) {
+			add_action( $filter, function() {
+				delete_cache();
+			} );
+		}
 	}
 
 	/**
@@ -130,6 +137,13 @@ add_action( 'plugins_loaded', function() {
 	add_action(
 		'template_redirect',
 		function() {
+
+			if ( isset( $_GET['__purge'] ) ) {
+
+				// Purge the entire cache and don't cache the current page.
+				delete_cache();
+				return;
+			}
 
 			if ( is_user_logged_in() ) {
 				return; // No caching for logged in users.
