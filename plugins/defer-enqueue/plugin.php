@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name:       Defer Scripts
+ * Plugin Name:       Defer Enqueued JavaScript & CSS
  * Plugin URI:        https://aubreypwd.com
- * Description:       This defers select scripts enqueued via <code>wp_enqueue_script()</code> for faster preformance.
+ * Description:       This defers select JavaScript and CSS files enqueued via <code>wp_enqueue_script()</code> for faster preformance.
  * Version:           1.0.0
  * Author:            Aubrey Portwood
  * Author URI:        https://aubreypwd.com
