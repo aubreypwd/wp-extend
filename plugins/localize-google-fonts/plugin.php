@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name:       Localize Google Fonts
+ * Plugin Name:       Localize Google Font CSS
  * Plugin URI:        https://aubreypwd.com
- * Description:       This switches out all images on the frontend (on-the-fly) with their Imagekit counterparts transformed.
- * Version:           1.0.0-alpha
+ * Description:       This will replace any requests to <code>fonts.googleapis.com/css</code> to localized versions to increase performance.
+ * Version:           1.0.0
  * Author:            Aubrey Portwood
  * Author URI:        https://aubreypwd.com
  * Copyright:         (c) Aubrey Portwood, 2025
@@ -59,8 +59,8 @@ add_action( 'plugins_loaded', function() {
 			);
 
 			$fonts_dir = sprintf(
-				'%s/aubreypwd/localize-google-font-css/fonts',
-				untrailingslashit( wp_get_upload_dir()["basedir"] )
+				'%s/cache/aubreypwd/localize-google-font-css/css',
+				dirname( untrailingslashit( wp_get_upload_dir()["basedir"] ) )
 			);
 
 			if ( ! wp_mkdir_p( $fonts_dir ) ) {
@@ -75,8 +75,11 @@ add_action( 'plugins_loaded', function() {
 					continue; // No matching link, we can't replace it.
 				}
 
-				$font_file = sprintf( '%s.css', md5( $match ) );
-				$font_path = sprintf( '%s/%s', untrailingslashit( $fonts_dir ), $font_file );
+				$font_path = sprintf(
+					'%s/%s',
+					untrailingslashit( $fonts_dir ),
+					sprintf( '%s.css', md5( $match ) ) // Create a signature version of the match.
+				);
 
 				if ( file_exists( $font_path ) ) {
 
