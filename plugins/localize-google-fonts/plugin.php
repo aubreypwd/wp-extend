@@ -23,6 +23,16 @@ if ( wp_doing_ajax() || wp_doing_cron() ) {
 	return;
 }
 
+/**
+ * Replace Google Font CSS matches in buffer.
+ *
+ * @param string $buffer    The ob_start() buffer from below.
+ * @param string $match     The match from the foreach() below.
+ * @param string $link      The original link from the match below.
+ * @param string $font_path The file path to the localized font below.
+ *
+ * @return string The buffer with localized versions.
+ */
 function replace_match_in_buffer( $buffer, $match, $link, $font_path ) {
 
 	$localized_font_url = str_replace( wp_normalize_path( WP_CONTENT_DIR ), content_url(), wp_normalize_path( $font_path ) );
