@@ -283,6 +283,10 @@ add_action( 'plugins_loaded', function() {
 					return $buffer;
 				}
 
+				if ( stristr( $buffer, '<body' ) ) {
+					return $buffer; // This doesn't look like HTML, so not caching.
+				}
+
 				// Store the result on-disk.
 				@file_put_contents( $cache_file, $buffer );
 
