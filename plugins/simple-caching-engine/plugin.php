@@ -138,6 +138,58 @@ add_action( 'plugins_loaded', function() {
 		'template_redirect',
 		function() {
 
+			if ( stristr( $_SERVER['REQUEST_URI'] ?? '', '/feed' ) ) {
+				return; // Stop caching feeds.
+			}
+
+			if ( stristr( $_SERVER['REQUEST_URI'] ?? '', '/robots.txt' ) ) {
+				return; // Stop caching robots.
+			}
+
+			if ( stristr( $_SERVER['REQUEST_URI'] ?? '', '/wp-sitemap' ) ) {
+				return; // Stop caching WP core sitemaps (e.g. /wp-sitemap.xml).
+			}
+
+			if ( stristr( $_SERVER['REQUEST_URI'] ?? '', '/wp-json' ) ) {
+				return; // Stop caching REST API.
+			}
+
+			if ( stristr( $_SERVER['REQUEST_URI'] ?? '', '/favicon.ico' ) ) {
+				return; // Stop caching favicon requests.
+			}
+
+			if ( stristr( $_SERVER['REQUEST_URI'] ?? '', '/xmlrpc.php' ) ) {
+				return; // Stop caching XML-RPC.
+			}
+
+			if ( stristr( $_SERVER['REQUEST_URI'] ?? '', '/wp-cron.php' ) ) {
+				return; // Stop caching WP cron.
+			}
+
+			if ( stristr( $_SERVER['REQUEST_URI'] ?? '', '/wp-login.php' ) ) {
+				return; // Stop caching login.
+			}
+
+			if ( stristr( $_SERVER['REQUEST_URI'] ?? '', '/wp-admin' ) ) {
+				return; // Stop caching wp-admin and admin handlers.
+			}
+
+			if ( stristr( $_SERVER['REQUEST_URI'] ?? '', '/wp-comments-post.php' ) ) {
+				return; // Stop caching comment submissions.
+			}
+
+			if ( stristr( $_SERVER['REQUEST_URI'] ?? '', '/wp-trackback.php' ) ) {
+				return; // Stop caching trackbacks.
+			}
+
+			if ( stristr( $_SERVER['REQUEST_URI'] ?? '', '/wp-activate.php' ) ) {
+				return; // Stop caching multisite activation.
+			}
+
+			if ( stristr( $_SERVER['REQUEST_URI'] ?? '', '/wp-signup.php' ) ) {
+				return; // Stop caching multisite signup.
+			}
+
 			if ( stristr( $_SERVER['REQUEST_URI'] ?? '', '.xml' ) ) {
 				return; // Stop caching sitemaps.
 			}
