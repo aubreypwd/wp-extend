@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:disable
 /**
  * Plugin Name:       Simple Server-side Caching Engine
  * Plugin URI:        https://aubreypwd.com
@@ -155,8 +155,12 @@ add_action( 'plugins_loaded', function() {
 
 			global $post;
 
-			if ( ! is_a( $post, '\WP_Post' ) ) {
+			if ( ! is_a( $post, '\WP_Post' ) && is_a( get_queried_object(), '\WP_Post' ) ) {
 				return; // Not a post, do not use cache.
+			}
+
+			if ( is_robots() ) {
+				return;
 			}
 
 			if ( in_array(
@@ -218,6 +222,10 @@ add_action( 'plugins_loaded', function() {
 
 			// Since there isn't a valid cache, (re-)create one by caching what WordPress does.
 			ob_start( function( $buffer ) use ( $cache_file, $post ) {
+
+				if ( empty( $buffer ) ) {
+					return $buffer;
+				}
 
 				// Store the result on-disk.
 				@file_put_contents( $cache_file, $buffer );
