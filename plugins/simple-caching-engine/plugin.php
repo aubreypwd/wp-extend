@@ -138,6 +138,10 @@ add_action( 'plugins_loaded', function() {
 		'template_redirect',
 		function() {
 
+			if ( stristr( $_SERVER['REQUEST_URI'] ?? '', '.xml' ) ) {
+				return; // Stop caching sitemaps.
+			}
+
 			if ( isset( $_GET['__purge'] ) ) {
 
 				// Purge the entire cache and don't cache the current page.
@@ -151,10 +155,6 @@ add_action( 'plugins_loaded', function() {
 
 			if ( ! empty( $_POST ) || ! empty( $_GET ) ) {
 				return; // Don't use cached contents when POST or GET have content (forms/etc).
-			}
-
-			if ( stristr( $_SERVER['REQUEST_URI'] ?? '', '.xml' ) ) {
-				return; // Stop caching sitemaps.
 			}
 
 			global $post;
