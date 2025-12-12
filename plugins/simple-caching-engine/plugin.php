@@ -153,6 +153,10 @@ add_action( 'plugins_loaded', function() {
 				return; // Don't use cached contents when POST or GET have content (forms/etc).
 			}
 
+			if ( stristr( $_SERVER['REQUEST_URI'] ?? '', '.xml' ) ) {
+				return; // Stop caching sitemaps.
+			}
+
 			global $post;
 
 			if ( ! is_a( $post, '\WP_Post' ) && is_a( get_queried_object(), '\WP_Post' ) ) {
